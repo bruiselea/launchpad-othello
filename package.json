@@ -1,0 +1,20 @@
+{
+  "name": "launchpad-studio",
+  "version": "0.1.0",
+  "description": "Novation Launchpad X playground & control studio",
+  "main": "./out/main/index.js",
+  "author": "wlknt",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+  },
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-vite": "^4.0.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0"
+  }
+}
