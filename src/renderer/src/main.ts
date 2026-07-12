@@ -1,10 +1,6 @@
-import { LaunchpadDevice, padToXY, RgbEntry } from './midi/launchpad'
+import { LaunchpadDevice, RgbEntry } from './midi/launchpad'
 import { FrameBuffer } from './core/frame'
 import { ModeManager, ModeContext } from './core/modes'
-import { monitorMode } from './modes/monitor'
-import { paintMode, PaintColor } from './modes/paint'
-import { rainbowMode } from './modes/rainbow'
-import { macroMode } from './modes/macro'
 import { othelloMode } from './modes/othello'
 
 // ---- DOM 参照 ----
@@ -38,7 +34,7 @@ function buildGrid(): void {
       const cell = document.createElement('div')
       cell.className = 'cell' + (row === 9 || col === 9 ? ' round' : '')
       cell.title = `pad ${pad}`
-      cell.addEventListener('mousedown', () => uiPadDown(pad))
+      cell.addEventListener('mousedown', () => manager.padDown(pad, 127))
       cell.addEventListener('mouseup', () => manager.padUp(pad))
       cell.addEventListener('mouseleave', () => manager.padUp(pad))
       gridEl.appendChild(cell)
@@ -64,17 +60,6 @@ const device = new LaunchpadDevice()
 const frame = new FrameBuffer()
 const ctx: ModeContext = { frame, device, log }
 const manager = new ModeManager(ctx, mirror)
-
-function uiPadDown(pad: number): void {
-  // マクロモードでは画面クリック = 編集対象の選択
-  if (manager.activeMode === macroMode) {
-    macroMode.uiSelectionSource = true
-    manager.padDown(pad, 127)
-    macroMode.uiSelectionSource = false
-    return
-  }
-  manager.padDown(pad, 127)
-}
 
 device.onPadDown = (pad, vel) => manager.padDown(pad, vel)
 device.onPadUp = (pad) => manager.padUp(pad)
@@ -128,124 +113,15 @@ function connectFlourish(): void {
       setTimeout(step, 45)
     } else {
       device.clearAll()
-      frame.invalidate() // アクティブモードの表示に戻す
+      frame.invalidate() // オセロ盤の表示に戻す
       flourishRunning = false
     }
   }
   step()
 }
 
-// ---- モードタブ ----
-const panels: Record<string, string | null> = {
-  monitor: null,
-  paint: 'paint-panel',
-  rainbow: null,
-  macro: 'macro-panel',
-  othello: null
-}
-
-function buildModeTabs(): void {
-  const tabs = $('mode-tabs')
-  for (const mode of manager.list()) {
-    const btn = document.createElement('button')
-    btn.textContent = mode.name
-    btn.dataset.mode = mode.id
-    btn.addEventListener('click', () => manager.activate(mode.id))
-    tabs.appendChild(btn)
-  }
-  manager.onModeChanged = (mode) => {
-    for (const btn of tabs.querySelectorAll('button')) {
-      btn.classList.toggle('active', btn.dataset.mode === mode.id)
-    }
-    $('mode-desc').textContent = mode.description
-    for (const [id, panelId] of Object.entries(panels)) {
-      if (panelId) $(panelId).hidden = id !== mode.id
-    }
-    // モード切替でミラーもリセット
-    for (const cell of cells.values()) cell.style.background = ''
-  }
-}
-
-// ---- ペイントパネル ----
-const PALETTE: PaintColor[] = [
-  { r: 127, g: 0, b: 0 },
-  { r: 127, g: 40, b: 0 },
-  { r: 127, g: 110, b: 0 },
-  { r: 30, g: 127, b: 0 },
-  { r: 0, g: 127, b: 60 },
-  { r: 0, g: 90, b: 127 },
-  { r: 20, g: 0, b: 127 },
-  { r: 90, g: 0, b: 127 },
-  { r: 127, g: 0, b: 80 },
-  { r: 127, g: 127, b: 127 },
-  { r: 60, g: 60, b: 60 },
-  { r: 127, g: 80, b: 40 },
-  { r: 80, g: 127, b: 90 },
-  { r: 100, g: 100, b: 0 },
-  { r: 0, g: 40, b: 80 },
-  { r: 127, g: 20, b: 20 }
-]
-
-function buildPalette(): void {
-  const paletteEl = $('palette')
-  PALETTE.forEach((c, i) => {
-    const sw = document.createElement('div')
-    sw.className = 'swatch' + (i === 1 ? ' selected' : '')
-    sw.style.background = `rgb(${c.r * 2}, ${c.g * 2}, ${c.b * 2})`
-    sw.addEventListener('click', () => {
-      paintMode.color = c
-      for (const el of paletteEl.querySelectorAll('.swatch')) el.classList.remove('selected')
-      sw.classList.add('selected')
-    })
-    paletteEl.appendChild(sw)
-  })
-  $('paint-clear').addEventListener('click', () => paintMode.clear(ctx))
-}
-
-// ---- マクロパネル ----
-function buildMacroPanel(): void {
-  const selectedEl = $('macro-selected')
-  const typeSel = $<HTMLSelectElement>('macro-type')
-  const targetInput = $<HTMLInputElement>('macro-target')
-
-  const refresh = (): void => {
-    const pad = macroMode.selectedPad
-    if (pad === null) {
-      selectedEl.textContent = 'パッド未選択 (画面のパッドをクリック)'
-      targetInput.value = ''
-      return
-    }
-    const { x, y } = padToXY(pad)
-    const a = macroMode.assignments[pad]
-    selectedEl.textContent = `選択中: pad ${pad} (x=${x}, y=${y})` + (a ? ' [割当あり]' : '')
-    if (a) {
-      typeSel.value = a.type
-      targetInput.value = a.target
-    } else {
-      targetInput.value = ''
-    }
-  }
-
-  macroMode.onSelectionChanged = refresh
-
-  $('macro-save').addEventListener('click', () => {
-    const pad = macroMode.selectedPad
-    const target = targetInput.value.trim()
-    if (pad === null || target === '') return
-    macroMode.assign(ctx, pad, {
-      type: typeSel.value as 'app' | 'url' | 'path',
-      target
-    })
-    refresh()
-  })
-
-  $('macro-delete').addEventListener('click', () => {
-    const pad = macroMode.selectedPad
-    if (pad === null) return
-    macroMode.unassign(ctx, pad)
-    refresh()
-  })
-}
+// ---- 新規対局ボタン ----
+$('othello-reset').addEventListener('click', () => othelloMode.reset(ctx))
 
 // ---- ポート手動選択 ----
 $('reconnect').addEventListener('click', () => {
@@ -270,16 +146,10 @@ window.api.onShutdown(() => {
 async function start(): Promise<void> {
   buildGrid()
 
-  manager.register(monitorMode)
-  manager.register(paintMode)
-  manager.register(rainbowMode)
-  manager.register(macroMode)
   manager.register(othelloMode)
-  buildModeTabs()
-  buildPalette()
-  buildMacroPanel()
+  $('mode-desc').textContent = othelloMode.description
 
-  manager.activate('monitor')
+  manager.activate('othello')
   manager.start()
 
   try {

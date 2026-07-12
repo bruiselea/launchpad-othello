@@ -52,7 +52,7 @@ function createWindow(): void {
 function createTray(): void {
   const icon = nativeImage.createFromPath(join(app.getAppPath(), 'resources/icon.png'))
   tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon)
-  tray.setToolTip('Launchpad Studio')
+  tray.setToolTip('Launchpad Othello')
   const menu = Menu.buildFromTemplate([
     { label: '開く', click: () => showWindow() },
     {

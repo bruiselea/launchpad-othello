@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Launchpad Studio</title>
+    <title>Launchpad Othello</title>
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
     <header id="header">
-      <h1>Launchpad Studio</h1>
+      <h1>Launchpad Othello</h1>
       <div id="status">
         <span id="status-dot" class="dot"></span>
         <span id="status-text">初期化中...</span>
@@ -26,36 +26,8 @@
       </section>
 
       <aside id="side">
-        <nav id="mode-tabs"></nav>
         <p id="mode-desc"></p>
-
-        <div id="paint-panel" class="panel" hidden>
-          <h2>パレット</h2>
-          <div id="palette"></div>
-          <button id="paint-clear">全消去</button>
-        </div>
-
-        <div id="macro-panel" class="panel" hidden>
-          <h2>マクロ編集</h2>
-          <p id="macro-selected">パッド未選択 (画面のパッドをクリック)</p>
-          <label>
-            種別
-            <select id="macro-type">
-              <option value="app">アプリ起動 (exe / コマンド)</option>
-              <option value="url">URL を開く</option>
-              <option value="path">ファイル/フォルダを開く</option>
-            </select>
-          </label>
-          <label>
-            ターゲット
-            <input id="macro-target" placeholder="例: notepad / https://example.com" />
-          </label>
-          <div class="row">
-            <button id="macro-save">保存</button>
-            <button id="macro-delete">削除</button>
-          </div>
-          <p class="hint">実機のパッドを押すと実行されます。</p>
-        </div>
+        <button id="othello-reset">新規対局</button>
 
         <div id="log-panel" class="panel">
           <h2>ログ</h2>

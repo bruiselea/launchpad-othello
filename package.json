@@ -1,7 +1,7 @@
 {
-  "name": "launchpad-studio",
+  "name": "launchpad-othello",
   "version": "0.1.0",
-  "description": "Novation Launchpad X playground & control studio",
+  "description": "Novation Launchpad X をオセロ盤にする専用アプリ",
   "main": "./out/main/index.js",
   "author": "wlknt",
   "private": true,
