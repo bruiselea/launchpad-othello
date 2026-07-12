@@ -5,6 +5,7 @@ import { monitorMode } from './modes/monitor'
 import { paintMode, PaintColor } from './modes/paint'
 import { rainbowMode } from './modes/rainbow'
 import { macroMode } from './modes/macro'
+import { othelloMode } from './modes/othello'
 
 // ---- DOM 参照 ----
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T
@@ -139,7 +140,8 @@ const panels: Record<string, string | null> = {
   monitor: null,
   paint: 'paint-panel',
   rainbow: null,
-  macro: 'macro-panel'
+  macro: 'macro-panel',
+  othello: null
 }
 
 function buildModeTabs(): void {
@@ -272,6 +274,7 @@ async function start(): Promise<void> {
   manager.register(paintMode)
   manager.register(rainbowMode)
   manager.register(macroMode)
+  manager.register(othelloMode)
   buildModeTabs()
   buildPalette()
   buildMacroPanel()
