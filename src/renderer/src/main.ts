@@ -11,6 +11,32 @@ const statusDot = $('status-dot')
 const statusText = $('status-text')
 const portInSel = $<HTMLSelectElement>('port-in')
 const portOutSel = $<HTMLSelectElement>('port-out')
+const firstColorSel = $<HTMLSelectElement>('first-color')
+const secondColorSel = $<HTMLSelectElement>('second-color')
+const opponentSel = $<HTMLSelectElement>('opponent-mode')
+const jevProvider = $<HTMLSelectElement>('jev-provider')
+const jevStatus = $('jev-status')
+const jevKey = $<HTMLInputElement>('jev-key')
+const jevKeyLink = $<HTMLAnchorElement>('jev-key-link')
+let configuredJevProvider: 'openrouter' | 'typesafe' | null = null
+
+const pieceColors: Record<string, [number, number, number]> = {
+  blue: [0, 66, 127],
+  sky: [0, 105, 127],
+  cyan: [0, 127, 127],
+  aqua: [0, 127, 72],
+  green: [0, 127, 28],
+  lime: [82, 127, 0],
+  purple: [90, 0, 127],
+  violet: [118, 0, 127],
+  orange: [127, 72, 0],
+  amber: [127, 100, 0],
+  yellow: [127, 127, 0],
+  red: [127, 0, 0],
+  coral: [127, 26, 8],
+  salmon: [127, 55, 24],
+  white: [127, 127, 127]
+}
 
 // ---- ログ ----
 function log(message: string): void {
@@ -61,6 +87,45 @@ const frame = new FrameBuffer()
 const ctx: ModeContext = { frame, device, log }
 const manager = new ModeManager(ctx, mirror)
 
+let celebrationRun = 0
+function celebrate(color: [number, number, number]): void {
+  const run = ++celebrationRun
+  let step = 0
+  const waveSteps = 28
+  const finaleSteps = 6
+  const play = (): void => {
+    if (run !== celebrationRun) return
+    const entries: RgbEntry[] = []
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 8; x++) {
+        // 斜めに走る光の波。最後は盤面全体を勝者色で点滅させる。
+        const wave = (Math.sin(x * 0.95 + y * 0.7 - step * 0.72) + 1) / 2
+        const bright = step < waveSteps ? 0.14 + wave * 0.86 : step % 2 === 0 ? 1 : 0.18
+        entries.push({
+          pad: (y + 1) * 10 + x + 1,
+          r: Math.round(color[0] * bright),
+          g: Math.round(color[1] * bright),
+          b: Math.round(color[2] * bright)
+        })
+      }
+    }
+    device.sendRgb(entries)
+    step++
+    if (step < waveSteps + finaleSteps) setTimeout(play, 105)
+    else frame.invalidate()
+  }
+  play()
+}
+
+othelloMode.onGameEnd = celebrate
+othelloMode.onReset = () => {
+  celebrationRun++
+}
+othelloMode.onJevMove = (board, legalMoves) => window.api.chooseJevMove({ board, legalMoves })
+othelloMode.onOpponentStatus = (message) => {
+  jevStatus.textContent = message
+}
+
 device.onPadDown = (pad, vel) => manager.padDown(pad, vel)
 device.onPadUp = (pad) => manager.padUp(pad)
 device.onLog = log
@@ -69,7 +134,6 @@ device.onStateChange = () => {
   updateStatus()
   updatePortSelectors()
   if (device.connected) {
-    frame.invalidate()
     connectFlourish()
   }
 }
@@ -121,7 +185,63 @@ function connectFlourish(): void {
 }
 
 // ---- 新規対局ボタン ----
-$('othello-reset').addEventListener('click', () => othelloMode.reset(ctx))
+$('othello-reset').addEventListener('click', () => {
+  othelloMode.reset(ctx)
+})
+
+opponentSel.addEventListener('change', () => {
+  othelloMode.setOpponent(ctx, opponentSel.value === 'human' ? 'human' : 'jev')
+  jevProvider.disabled = opponentSel.value === 'human'
+  jevKey.disabled = opponentSel.value === 'human'
+  $('jev-connect').toggleAttribute('disabled', opponentSel.value === 'human')
+  $('jev-retry').toggleAttribute('disabled', opponentSel.value === 'human')
+})
+
+jevProvider.addEventListener('change', () => {
+  const openrouter = jevProvider.value === 'openrouter'
+  jevKey.value = ''
+  jevKey.placeholder = `${openrouter ? 'OpenRouter' : 'TypeSafe'} API キー`
+  jevKeyLink.href = openrouter
+    ? 'https://openrouter.ai/workspaces/default/keys'
+    : 'https://console.typesafe.ai/'
+  jevKeyLink.textContent = `${openrouter ? 'OpenRouter' : 'TypeSafe'} で API キーを取得`
+  if (configuredJevProvider && configuredJevProvider !== jevProvider.value) {
+    jevStatus.textContent = '発行元を切り替えるには、新しい API キーを入力して「設定」を押してください'
+  }
+})
+
+$('jev-connect').addEventListener('click', async () => {
+  try {
+    const provider = jevProvider.value === 'typesafe' ? 'typesafe' : 'openrouter'
+    await window.api.setJevKey(provider, jevKey.value)
+    configuredJevProvider = provider
+    jevKey.value = ''
+    othelloMode.reset(ctx)
+    log(`${provider === 'openrouter' ? 'OpenRouter' : 'TypeSafe'} の Jev API キーを設定しました。新規対局を開始します。`)
+  } catch (error) {
+    jevStatus.textContent = `Jev の設定エラー: ${error instanceof Error ? error.message : String(error)}`
+  }
+})
+
+$('jev-retry').addEventListener('click', () => othelloMode.retryJevMove(ctx))
+
+function updatePieceColors(): void {
+  othelloMode.setPieceColors(
+    ctx,
+    pieceColors[firstColorSel.value] ?? pieceColors.blue,
+    pieceColors[secondColorSel.value] ?? pieceColors.orange
+  )
+}
+
+firstColorSel.addEventListener('change', updatePieceColors)
+secondColorSel.addEventListener('change', updatePieceColors)
+$('test-first-celebration').addEventListener('click', () => {
+  celebrate(pieceColors[firstColorSel.value] ?? pieceColors.blue)
+})
+$('test-second-celebration').addEventListener('click', () => {
+  celebrate(pieceColors[secondColorSel.value] ?? pieceColors.orange)
+})
+$('debug-endgame').addEventListener('click', () => othelloMode.debugEndGame(ctx))
 
 // ---- ポート手動選択 ----
 $('reconnect').addEventListener('click', () => {
@@ -151,6 +271,20 @@ async function start(): Promise<void> {
 
   manager.activate('othello')
   manager.start()
+
+  try {
+    const provider = await window.api.jevAvailable()
+    if (provider) {
+      configuredJevProvider = provider
+      jevProvider.value = provider
+      jevProvider.dispatchEvent(new Event('change'))
+      jevStatus.textContent = `${provider === 'openrouter' ? 'OpenRouter' : 'TypeSafe'} の API キーを読み込みました`
+    } else {
+      jevStatus.textContent = 'Jev を使うには API キーを入力してください'
+    }
+  } catch (error) {
+    jevStatus.textContent = `Jev の確認に失敗: ${error instanceof Error ? error.message : String(error)}`
+  }
 
   try {
     await device.init()

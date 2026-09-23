@@ -27,6 +27,60 @@
 
       <aside id="side">
         <p id="mode-desc"></p>
+        <div class="panel" id="opponent-settings">
+          <h2>対戦相手</h2>
+          <select id="opponent-mode" aria-label="対戦相手">
+            <option value="jev" selected>Jev（あなたが先手）</option>
+            <option value="human">2人対戦</option>
+          </select>
+          <p id="jev-status" class="hint" role="status">Jev を確認中…</p>
+          <label>
+            API キーの発行元
+            <select id="jev-provider" aria-label="API キーの発行元">
+              <option value="openrouter" selected>OpenRouter</option>
+              <option value="typesafe">TypeSafe</option>
+            </select>
+          </label>
+          <div class="row">
+            <input id="jev-key" type="password" placeholder="OpenRouter API キー" aria-label="Jev API キー" autocomplete="off" />
+            <button id="jev-connect">設定</button>
+          </div>
+          <a id="jev-key-link" class="hint" href="https://openrouter.ai/workspaces/default/keys" target="_blank" rel="noopener noreferrer">OpenRouter で API キーを取得</a>
+          <button id="jev-retry">Jev の手を再試行</button>
+        </div>
+        <div class="panel" id="color-settings">
+          <h2>石の色</h2>
+          <label>
+            先手
+            <select id="first-color">
+              <option value="blue" selected>ブルー</option>
+              <option value="sky">スカイブルー</option>
+              <option value="cyan">シアン</option>
+              <option value="aqua">アクア</option>
+              <option value="green">グリーン</option>
+              <option value="lime">ライム</option>
+              <option value="purple">パープル</option>
+              <option value="violet">バイオレット</option>
+            </select>
+          </label>
+          <label>
+            後手
+            <select id="second-color">
+              <option value="orange" selected>オレンジ</option>
+              <option value="amber">アンバー</option>
+              <option value="yellow">イエロー</option>
+              <option value="red">レッド</option>
+              <option value="coral">コーラル</option>
+              <option value="salmon">サーモン</option>
+              <option value="white">ホワイト</option>
+            </select>
+          </label>
+          <div class="row" aria-label="セレブレーションのテスト">
+            <button id="test-first-celebration">先手で試す</button>
+            <button id="test-second-celebration">後手で試す</button>
+          </div>
+          <button id="debug-endgame">終局画面を出す</button>
+        </div>
         <button id="othello-reset">新規対局</button>
 
         <div id="log-panel" class="panel">

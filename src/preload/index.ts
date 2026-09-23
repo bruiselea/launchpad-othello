@@ -1,8 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 const api = {
-  runMacro: (action: { type: 'app' | 'url' | 'path'; target: string; args?: string[] }) =>
-    ipcRenderer.invoke('macro:run', action) as Promise<string>,
+  jevAvailable: () => ipcRenderer.invoke('jev:status') as Promise<'openrouter' | 'typesafe' | null>,
+  setJevKey: (provider: 'openrouter' | 'typesafe', key: string) =>
+    ipcRenderer.invoke('jev:set-key', provider, key) as Promise<void>,
+  chooseJevMove: (request: { board: number[][]; legalMoves: { pad: number; flips: number }[] }) =>
+    ipcRenderer.invoke('jev:move', request) as Promise<number>,
   onShutdown: (cb: () => void) => {
     ipcRenderer.on('app:shutdown', () => cb())
   },

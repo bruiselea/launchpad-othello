@@ -12,6 +12,16 @@ npm run build    # プロダクションビルド (out/ に出力)
 npm run typecheck
 ```
 
+## Windows アプリを作る
+
+`npm install` 後に `npm run package:win` を実行すると、`release/` にインストーラーと
+インストール不要版の `.exe` が生成されます。Electron ランタイムは同梱されるため、
+利用者に Node.js は不要です。Launchpad X 本体、USB 接続、Jev 対戦用の API キーと
+インターネット接続は別途必要です。API キーはインストーラーに含めません。
+
+現状のパッケージは未署名です。一般配布前には Windows のコード署名を設定し、
+別の Windows PC でもインストール・MIDI 接続・対戦動作を確認してください。
+
 ※ VSCode 内蔵ターミナルから起動する場合、`ELECTRON_RUN_AS_NODE` が環境に漏れていると
 Electron が Node モードで起動して落ちる。その場合は
 `Remove-Item Env:\ELECTRON_RUN_AS_NODE` してから `npm run dev`。
@@ -20,12 +30,13 @@ Electron が Node モードで起動して落ちる。その場合は
 
 - Launchpad X を USB 接続すると自動検出され、起動時に Programmer モードへ切り替わる
   (抜き差しにも追従)。接続時は白い波が走る接続確認デモが出る
-- 8x8 グリッドがそのままオセロ盤。黒(紫)/白(グレー) の2人対戦、実機で交互に押す
-- 合法手のマスはうっすら光ってヒント表示。着手すると挟んだ石が一瞬オレンジで
-  光ってひっくり返る
+- 8x8 グリッドがそのままオセロ盤。先手と後手の色は画面から選べます
+- 対戦相手を「Jev」にすると、あなたが先手、TypeSafe AI の Jev が後手を担当します。Jev の利用にはインターネット接続と [OpenRouter の API キー](https://openrouter.ai/workspaces/default/keys)、または [TypeSafe の API キー](https://console.typesafe.ai/) が必要です。アプリで発行元を選び、キーを入力して「設定」を押してください。OpenRouter は Jev 専用の Decisions API を使用します。キーはアプリ起動中だけ保持し、保存しません。起動前に `OPENROUTER_API_KEY` または `TYPESAFE_API_KEY` 環境変数で渡すこともできます（両方ある場合は OpenRouter を優先）。通信エラー時は「Jev の手を再試行」を押してください。
+- 着手すると挟んだ石が一瞬黄色く光ってひっくり返る
 - 合法手が無いプレイヤーは自動パス。両者パス、または盤面が埋まったらゲーム終了、
   勝敗をログに表示 (画面下部)
 - 「新規対局」ボタンでいつでもリセット可能
+- 終局後は中央4パッド（44・45・54・55）の同時押しでもリセット可能
 - ウィンドウを閉じてもタスクトレイに常駐し、MIDI 処理は動き続ける。終了はトレイの「終了」
   (終了時に Launchpad は Live モードへ復帰する)
 - ポート自動検出に失敗する場合はヘッダーのポート選択 + 「再接続」で手動選択
@@ -55,6 +66,6 @@ src/renderer/
 
 ## 今後の拡張候補
 
-- CPU 対戦 (簡易 AI)
+- API を使わないオフライン対戦相手
 - 得点表示を LED でも見せる演出
 - 対局ログの棋譜保存

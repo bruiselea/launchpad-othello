@@ -1,0 +1,19 @@
+appId: com.wlknt.launchpadothello
+productName: Launchpad Othello
+directories:
+  output: release
+files:
+  - out/**/*
+  - resources/icon.png
+  - package.json
+asar: true
+win:
+  icon: resources/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

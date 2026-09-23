@@ -1,13 +1,9 @@
-export interface MacroActionPayload {
-  type: 'app' | 'url' | 'path'
-  target: string
-  args?: string[]
-}
-
 declare global {
   interface Window {
     api: {
-      runMacro: (action: MacroActionPayload) => Promise<string>
+      jevAvailable: () => Promise<'openrouter' | 'typesafe' | null>
+      setJevKey: (provider: 'openrouter' | 'typesafe', key: string) => Promise<void>
+      chooseJevMove: (request: { board: number[][]; legalMoves: { pad: number; flips: number }[] }) => Promise<number>
       onShutdown: (cb: () => void) => void
       quitReady: () => void
     }

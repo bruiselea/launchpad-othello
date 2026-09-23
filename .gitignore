@@ -1,4 +1,8 @@
 node_modules/
 out/
 dist/
+release/
+.builder-cache/
 *.log
+.env
+.env.*

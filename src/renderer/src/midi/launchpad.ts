@@ -51,12 +51,16 @@ export class LaunchpadDevice {
   }
 
   async init(): Promise<void> {
-    this.access = await navigator.requestMIDIAccess({ sysex: true })
+    this.onLog?.('WebMIDI の利用許可を確認しています…')
+    this.access = await this.requestMidiAccess()
     this.access.onstatechange = () => {
       // 抜き差しに追従: 現在のポートが消えたら再スキャン、未接続なら接続を試みる
-      const inputAlive = this.input && this.access!.inputs.get(this.input.id)
-      const outputAlive = this.output && this.access!.outputs.get(this.output.id)
+      const inputAlive =
+        this.input && this.access!.inputs.get(this.input.id)?.state === 'connected'
+      const outputAlive =
+        this.output && this.access!.outputs.get(this.output.id)?.state === 'connected'
       if (!inputAlive || !outputAlive) {
+        if (this.input) this.input.onmidimessage = null
         this.input = null
         this.output = null
       }
@@ -67,6 +71,25 @@ export class LaunchpadDevice {
     }
     this.logPorts()
     this.autoConnect()
+  }
+
+  private requestMidiAccess(): Promise<MIDIAccess> {
+    return new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        reject(new Error('WebMIDI の初期化がタイムアウトしました。USB 接続と MIDI の利用許可を確認してください。'))
+      }, 10_000)
+
+      navigator.requestMIDIAccess({ sysex: true }).then(
+        (access) => {
+          window.clearTimeout(timeout)
+          resolve(access)
+        },
+        (error) => {
+          window.clearTimeout(timeout)
+          reject(error)
+        }
+      )
+    })
   }
 
   logPorts(): void {

@@ -183,6 +183,16 @@ button:hover {
   gap: 6px;
 }
 
+#jev-key {
+  min-width: 0;
+  flex: 1;
+}
+
+#jev-status {
+  min-height: 1.4em;
+  color: #bbb;
+}
+
 .hint {
   font-size: 10px;
   color: #777;
